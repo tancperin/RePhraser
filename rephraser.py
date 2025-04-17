@@ -3,13 +3,15 @@ import torch
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 import time
 
+# paraphrase-multilingual-MiniLM-L12-v2
 def __cosine_similarity(sentences):
-    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+    model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
     embeddings = model.encode(sentences, convert_to_tensor=True)
     cosine_matrix = util.pytorch_cos_sim(embeddings, embeddings)
     return cosine_matrix
 
-def __t5_paraphraser(sentence, seed=time.time(), max_length=0, top_k=50, top_p=0.95):
+# t5_paraphraser
+def __t5_paraphraser(modelselected, sentence, seed=time.time(), max_length=0, top_k=50, top_p=0.95):
     seed = seed if seed > 0 else time.time()
     max_length = max_length if max_length > 0 else sentence.__len__()*2
     top_k = top_k if top_k > 0 else 50
@@ -17,8 +19,8 @@ def __t5_paraphraser(sentence, seed=time.time(), max_length=0, top_k=50, top_p=0
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-    model = T5ForConditionalGeneration.from_pretrained('ramsrigouthamg/t5_paraphraser')
-    tokenizer = T5Tokenizer.from_pretrained('ramsrigouthamg/t5_paraphraser')
+    model = T5ForConditionalGeneration.from_pretrained(modelselected)
+    tokenizer = T5Tokenizer.from_pretrained(modelselected)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     text =  "paraphrase: " + sentence + " </s>"
@@ -43,11 +45,11 @@ def __t5_paraphraser(sentence, seed=time.time(), max_length=0, top_k=50, top_p=0
             final_outputs.append(sent)
     return final_outputs
 
-def rephrase(sentence, amount=10, seed=time.time(), max_length=0, top_k=50, top_p=0.95):
+def rephrase(modelselected, sentence, amount=10, seed=time.time(), max_length=0, top_k=50, top_p=0.95):
     sentences = [] 
     i = 0
     while (len(sentences) < amount):
-        recievedSentences = __t5_paraphraser(sentence, seed + i, max_length, top_k, top_p)
+        recievedSentences = __t5_paraphraser(modelselected, sentence, seed + i, max_length, top_k, top_p)
         if (len(recievedSentences) != 0): 
             if recievedSentences[0] in sentences: 
                 i += 1
