@@ -42,3 +42,23 @@ def __t5_paraphraser(sentence, seed=time.time(), max_length=0, top_k=50, top_p=0
         if sent.lower() != sentence.lower() and sent not in final_outputs:
             final_outputs.append(sent)
     return final_outputs
+
+def rephrase(sentence, amount=10, seed=time.time(), max_length=0, top_k=50, top_p=0.95):
+    sentences = [] 
+    i = 0
+    while (len(sentences) < amount):
+        recievedSentences = __t5_paraphraser(sentence, seed + i, max_length, top_k, top_p)
+        if (len(recievedSentences) != 0): 
+            if recievedSentences[0] in sentences: 
+                i += 1
+                continue
+            sentences.append(recievedSentences[0])
+        i += 1
+        
+    cosine = [sentence] + sentences
+    cosine_matrix = __cosine_similarity(cosine)
+    sentencesWithCosine = []
+    for i in range(1, len(cosine)):
+        sentencesWithCosine.append((cosine[i], cosine_matrix[0][i].item()))
+    sentencesWithCosine.sort(key=lambda x: x[1], reverse=True)
+    return sentencesWithCosine
